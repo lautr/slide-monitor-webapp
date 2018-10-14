@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html ng-app="slideMonitorWebapp" ng-controller="TitleController">
+<head>
+    <title>{{pageTitle}}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <!-- completly reload the page every 3600 seconds / 1 hour - this is to avoid memory leaks -->
+    <meta http-equiv="refresh" content="3600">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-rc.17/css/uikit.min.css" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
+    <script>
+    // here you can add your own config
+      const config = {
+        title: '<b>EXAMPLE</b>-Monitor',
+        frequency: 120000,
+        notify: true,
+        contentful: {
+          space: 'smevkk83y59w',
+          accessToken: '1c1cdd23a1d5acc4c4347b9fe0e329d52e9042051d4bf9fd05ac40b8664fcc6e',
+          identifiers: {
+            slides: {
+              type: 'slides',
+              property: 'image'
+            },
+            texts: {
+              type: 'texts',
+              property: 'text'
+            },
+          }
+        },
+        slide: {
+          speed: 3000,
+          maxWidth: 2048
+        },
+        text: {
+          speed: -100,
+          separator: '&nbsp;/&nbsp;'
+        },
+        weather: {
+          backgrounds: {
+            'clear sky': 'https://cdn.stocksnap.io/img-thumbs/960w/YJUPNN7Y7L.jpg',
+            'few clouds': 'https://cdn.stocksnap.io/img-thumbs/960w/YJUPNN7Y7L.jpg',
+            'scattered clouds': 'https://cdn.stocksnap.io/img-thumbs/960w/YJUPNN7Y7L.jpg',
+            'broken clouds': 'https://cdn.stocksnap.io/img-thumbs/960w/VZBJUVPO25.jpg',
+            'shower rain': 'https://cdn.stocksnap.io/img-thumbs/960w/VZBJUVPO25.jpg',
+            'rain': 'https://cdn.stocksnap.io/img-thumbs/960w/VZBJUVPO25.jpg',
+            'thunderstorm': 'https://cdn.stocksnap.io/img-thumbs/960w/VZBJUVPO25.jpg',
+            'snow': 'https://cdn.stocksnap.io/img-thumbs/960w/VZBJUVPO25.jpg',
+            'mist': 'https://cdn.stocksnap.io/img-thumbs/960w/VZBJUVPO25.jpg',
+          }
+        }
+      }
+    </script>
+    <style type="text/less">
+      /* layout config values */
+      @top-height: 80px;
+      @top-background-color: white;
+      @top-text-color: #666;
+
+      @bottom-height: 85px;
+      @bottom-background-color: #1e87f0;
+      @bottom-text-color: white;
+
+      @weather-box-large-color: rgba(50, 210, 150, 0.71);
+      @weather-box-small-color: rgba(30, 135, 240, 0.71);
+
+      /* layout specifics -- ideally dont change */
+      #app { position: absolute; height: 100%; width: 100%; overflow: hidden; flex: 1; align-self: auto; }
+      #top { height: @top-height; font-size: @top-height*0.5; flex: 0 0 auto; background-color: @top-background-color; z-index: 10; line-height: @top-height; padding: 0 1em; color: @top-text-color; }   
+      #slider { flex: 1; position: relative; z-index: 5; > div { position: absolute; height: 100%; width: 100%; }}
+      #text-crawl { height: @bottom-height; line-height: @top-height; font-size: @top-height*0.35; flex: 0 0 auto; background-color: @bottom-background-color; z-index: 10; color: @bottom-text-color; }
+      .uk-box-shadow-large-top { box-shadow: 0px -14px 25px rgba(0,0,0,.16) }
+      .uk-slider-items {height: 100%;}
+      .slide-image { height: 100%; width: 100%; > .uk-panel { width: 100%; height: 100%; background-repeat: no-repeat; background-position: center;background-size: cover; }}
+      .weather-box { position: absolute; top: 50%; transform: translateY(-50%) translateX(-50%); left: 50%; width: 32%; }
+      .weather-stat {font-size: 2rem; margin-right: 2%; width: 32%; text-align: center; background-color: @weather-box-small-color; &:last-child {margin-right: 0;}}
+      .weather-stat-big {font-size: 4rem; display: block; margin-bottom: 16px; text-align: center; background-color: @weather-box-large-color; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-rc.17/js/uikit.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/less.js/2.7.1/less.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.7.2/angular.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.7.2/angular-sanitize.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dynamic-marquee@1"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/contentful@5.0.1/dist/contentful.browser.min.js"></script>
+</head>
+<body>
+<div class="uk-container-expand	uk-flex uk-flex-column" id="app">
+  <!-- brand header -->
+  <div class="uk-box-shadow-large" ng-controller="TopController" id="top">
+    <span ng-bind-html="monitorTitle"></span>
+  </div>
+  <!-- image slider -->
+  <div id="slider" ng-controller="SlideController">
+    <div id="slider-element">
+      <ul class="uk-slider-items uk-grid">
+        <li class="uk-width-4-4 slide-image" ng-controller="WeatherController">
+          <div class="uk-panel" ng-style="{'background-image': weatherImage}">
+            <div class="weather-box">
+              <span class="uk-label weather-stat-big uk-label-success" uk-tooltip="Temperature"><i class="fas fa-sun"></i>&nbsp;{{weather.main.temp}}°C</span>
+              <div class="uk-flex">
+                <span class="uk-label weather-stat" uk-tooltip="Cloudyness"><i class="fas fa-cloud"></i>&nbsp;{{weather.clouds.all}}%</span>
+                <span class="uk-label weather-stat" uk-tooltip="Wind"><i class="fas fa-angle-double-right"></i>&nbsp;{{weather.wind.speed}} km/h</span>
+                <span class="uk-label weather-stat" uk-tooltip="Humidity"><i class="fas fa-tint"></i>&nbsp;{{weather.main.humidity}}%</span>             
+              </div>
+            </div>
+          </div>
+        </li>
+        <li class="uk-width-4-4 slide-image" ng-repeat="slide in slides">
+          <div class="uk-panel " ng-style="{'background-image': slide}"></div>
+        </li>
+      </ul>
+      <a class="uk-position-center-left uk-position-small uk-hidden-hover" href="#" uk-slidenav-previous uk-slider-item="previous"></a>
+      <a class="uk-position-center-right uk-position-small uk-hidden-hover" href="#" uk-slidenav-next uk-slider-item="next"></a>
+    </div>
+  </div>
+  <!-- test scroll -->
+  <div class="uk-box-shadow-large-top" ng-controller="MarqueeController" id="text-crawl">
+    <div id="MarqueeOutput"></div>
+  </div>
+</div>
+<script src="js/app.js"></script>
+<!--
+basic boilerplate for simple stand alone pages
+with everything inline in case you don't want or need assets
+@see https://github.com/lautr/HTML-Boilerplate
+-->
+</body>
+</html>
